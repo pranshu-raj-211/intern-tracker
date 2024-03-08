@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 import requests
-import streamlit as st
 
+
+# works fine without js or cookies
 BASE_URL = "https://internshala.com/internships/"
 
 preferences = {
@@ -27,11 +28,12 @@ def get_page():
     return requests.get(DATA_JOBS_URL)
 
 
-with open("internshala.html") as page:
-    soup = BeautifulSoup(page, "lxml")
+# with open("internshala.html") as page:
+#     soup = BeautifulSoup(page, "lxml")
 
 
-def find_jobs(soup):
+def find_jobs(page):
+    soup = BeautifulSoup(page, 'lxml')
     containers = soup.find_all("div", {"class": "internship_meta"})
 
     job_details = dict()
@@ -63,18 +65,12 @@ def find_jobs(soup):
 
 
 def show_jobs(jobs):
-    st.title("Internships at Internshala")
-    for job in jobs:
-        st.write(
-            f'<b>{jobs[job]["title"]}</b><div>{jobs[job]["company"]}</div><p>Pay : {jobs[job]["pay"]}</p><p><a href= {jobs[job]["link"]}>Apply</a></p>',
-            unsafe_allow_html=True,
-        )
+    for job in jobs.values():
+        print(job)
 
-
-def main():
-    jobs = find_jobs(soup)
-    show_jobs(jobs)
 
 
 if __name__ == "__main__":
-    main()
+    page = get_page().content
+    jobs = find_jobs(page)
+    show_jobs(jobs)
