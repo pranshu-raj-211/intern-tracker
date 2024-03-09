@@ -1,4 +1,7 @@
+import csv
+import random
 import time
+import datetime
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
@@ -8,6 +11,26 @@ base_url = "https://in.indeed.com/jobs?q=machine+learning&l=Remote&from=searchOn
 
 
 jobs =[]
+job_titles = ["python developer",
+    "data analyst",
+    "machine learning intern",
+    "software engineer",
+    "web developer",
+    "backend developer",
+    "devops engineer",
+    "automation engineer",
+    "network engineer",
+    "vuejs developer",
+    "react developer",
+    "nodejs developer",
+    "frontend developer",
+    "full stack developer",
+    "ui developer",
+    "web application developer",
+    "javascript engineer",
+    "mobile app developer",
+    "backend developer"
+    ]
 
 def get_jobs(soup):
     containers = soup.findAll('div', class_='job_seen_beacon')
@@ -42,11 +65,15 @@ def get_jobs(soup):
 num_pages = 5
 all_jobs = []
 
+current_date = datetime.datetime.now().strftime('%Y_%m_%d')
+random.seed(int(datetime.datetime.now().strftime('%d')))
+
 for i in range(num_pages):
     driver.get(base_url + '&start='+ str(i*10))
     # implicit wait - stops when page loads or time is over
     driver.implicitly_wait(15)
     # TODO: I should add in some random delay here
+    time.sleep(30*random.random())
     html = driver.page_source
     
     soup = BeautifulSoup(html, 'html.parser')
@@ -60,3 +87,13 @@ for job in all_jobs:
     print(job)
 
 # TODO: Add code to push data to a csv/pipeline
+    
+fieldnames = all_jobs[0].keys()
+
+
+with open(f'data/indeed{current_date}.csv', 'w', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+    for job in all_jobs:
+        writer.writerow(job)
