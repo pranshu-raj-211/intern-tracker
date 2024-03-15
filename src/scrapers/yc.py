@@ -62,7 +62,7 @@ def scrape_pages(base_url, num_pages):
         all_data = pd.concat([all_data, page_data])
 
     driver.quit()
-
+    all_data['query']=all_data['title']
     return all_data
 
 def main():
@@ -70,7 +70,7 @@ def main():
     num_pages = 1
     data = scrape_pages(base_url, num_pages)
 
-    data.to_csv(f"data/yc/{str(date)}.csv", index=False)
+    data.to_csv(f"data/raw/yc/{str(date)}.csv", index=False)
 
 if __name__ == "__main__":
     main()
