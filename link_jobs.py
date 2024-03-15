@@ -8,34 +8,28 @@ logging.basicConfig(level=logging.INFO)
 
 df = pd.read_csv("data/cleaned/indeed/2024_03_15.csv")
 
-links = [
-    (
-        '',
-        '',
-        '',
-        ''
-    )
-]
+links = [("", "", "", "")]
+chunk_index = 0
 
 
 def get_chunks(df, chunk_size=25):
-    n_chunks = len(df) // chunk_size+1
+    '''
+    Generator function to get a chunk of the dataframe at a time.'''
+    n_chunks = len(df) // chunk_size + 1
     for i in range(n_chunks):
         yield df.iloc[i * chunk_size : (i + 1) * chunk_size]
 
 
-for chunk in get_chunks(df, 25):
-    links = [(row["title"], row["link"]) for index, row in chunk.iterrows()]
-    # Now you can use the links list
-
-
 def navigate_to_link(state, id, payload=None):
-    # The correct url is passed through the id
+    """
+    Redirects to the link provided in the item(row) based on its id."""
     link_url = id
     navigate(state, to=link_url, force=True)
 
 
 def refresh_links(state):
+    """
+    Refreshes the items shown on the page after updates are made."""
     with tgb.Page() as link_part:
         with tgb.layout("1"):
             for link in state.links:
@@ -56,16 +50,22 @@ def refresh_links(state):
 
 
 def simulate_adding_more_links(state):
-    state.links =[]
-    for i,chunk in enumerate(get_chunks(df, 25)):
-        logging.info(f'processing chunk {i}')
-        logging.info(chunk.index[0])
-        state.links += [
-            (row["title"], row["company"], row["location"], row["link"])
-            for _, row in chunk.iterrows()
-        ]
-        refresh_links(state)
-        time.sleep(0.1)
+    """
+    Adds more items to the state's link variable."""
+    global chunk_index
+    chunks = list(get_chunks(df))
+    state.links = []
+    if chunk_index < len(chunks):
+        chunk = chunks[chunk_index]
+        if not chunk.empty:
+            logging.info(f"processing chunk {chunk_index}")
+            logging.info(chunk.index[0])
+            state.links = [
+                (row["title"], row["company"], row["location"], row["link"])
+                for _, row in chunk.iterrows()
+            ]
+            refresh_links(state)
+        chunk_index += 1
 
 
 with tgb.Page() as main_page:
@@ -74,8 +74,8 @@ with tgb.Page() as main_page:
 
 
 def on_init(state):
-    # When you open the client, this function is triggered
-    # and initialize the links
+    """
+    Triggered upon opening the client."""
     simulate_adding_more_links(state)
     refresh_links(state)
 
