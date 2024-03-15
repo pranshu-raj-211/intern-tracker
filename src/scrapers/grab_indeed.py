@@ -20,12 +20,12 @@ driver = webdriver.Firefox()
 
 job_titles = [
     "python developer",
-    "data analyst",
-    "machine learning intern",
+    #"data analyst",
+    #"machine learning intern",
     "software engineer",
     "backend developer",
-    "devops engineer",
-    "automation engineer",
+    #"devops engineer",
+    #"automation engineer",
     # "network engineer",
     # "vuejs developer",
     # "react developer",
@@ -43,7 +43,7 @@ num_pages = 5
 current_date = datetime.datetime.now().strftime("%Y_%m_%d")
 random.seed(int(datetime.datetime.now().strftime("%d")))
 start_time = time.time()
-
+jobs_df = pd.DataFrame()
 
 def get_jobs(soup):
     containers = soup.findAll("div", class_="job_seen_beacon")
@@ -71,7 +71,6 @@ def get_jobs(soup):
                 "company": company,
                 "salary": salary,
                 "location": location,
-                "duration": "Not specified",
                 "link": link,
                 "date": date,
             }
@@ -103,7 +102,7 @@ for title in job_titles:
         all_jobs.extend(found_jobs)
 
     # Create directory if it doesn't exist
-    directory = os.path.join(os.getcwd(), f"data/indeed/{current_date}")
+    directory = os.path.join(os.getcwd(), f"data/raw/indeed")
     if not os.path.exists(directory):
         os.makedirs(directory)
         print(os.path.exists(directory))
@@ -112,7 +111,10 @@ for title in job_titles:
     # Write to CSV
     fieldnames = all_jobs[0].keys()
     df = pd.DataFrame(all_jobs)
-    df.to_csv(f'{directory}/{title.replace(" ", "_")}.csv', index=False)
+    df['query']=title
+    df['source']='indeed'
+    jobs_df = pd.concat([jobs_df, df], ignore_index=True)
+    jobs_df.to_csv(f'{directory}/{current_date}.csv', index=False)
 
     logging.info(f"Done with {title}, scraped {len(all_jobs)} jobs")
 
