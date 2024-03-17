@@ -1,8 +1,9 @@
 import os
 import pandas as pd
+from datetime import datetime
 
-
-directories = ["data/raw/indeed/", "data/raw/yc"]
+date = datetime.today().strftime("%Y_%m_%d")
+DIRECTORIES = ["data/raw/indeed/", "data/raw/yc"]
 required_columns = [
     "title",
     "company",
@@ -13,6 +14,10 @@ required_columns = [
     "query",
     "source",
 ]
+RAW = "raw"
+AGGREGATE_PATH = f"data/aggregate/aggregate.csv"
+CLEANED = "cleaned"
+
 dataframes = []
 
 # TODO: add aggregation of jobs - return a single csv file for all
@@ -72,17 +77,24 @@ def process_data(data, source):
 # TODO : if all required columns not present, init with empty values
 
 
-if __name__ == "__main__":
-    for path in get_paths(directories):
+def main():
+    for path in get_paths(DIRECTORIES):
         data = get_data(path)
-        source = source = os.path.basename(os.path.dirname(path))
-        data = process_data(data, source)
-        path = str(path).replace("raw", "cleaned")
-        #data.to_csv(path, index=False)
-        dataframes.append(data)
-    if len(dataframes) != 0:
+        if data is not None:
+            source = os.path.basename(os.path.dirname(path))
+            data = process_data(data, source)
+            path = str(path).replace(RAW, CLEANED)
+            dataframes.append(data)
+    if dataframes:
         aggregated_data = pd.concat(dataframes, ignore_index=True)
+        if os.path.exists(AGGREGATE_PATH):
+            previous_aggregate = pd.read_csv(AGGREGATE_PATH)
+            aggregated_data = pd.concat([aggregated_data, previous_aggregate])
         print(len(aggregated_data))
-        aggregated_data.to_csv("data/processed/aggregate.csv",index=False)
+        aggregated_data.to_csv(AGGREGATE_PATH, index=False)
     else:
-        print('No dataframes to aggregate')
+        print("No dataframes to aggregate")
+
+
+if __name__ == "__main__":
+    main()
