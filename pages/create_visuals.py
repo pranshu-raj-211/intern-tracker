@@ -1,6 +1,4 @@
-from taipy import Gui 
 import pandas as pd
-from taipy.gui import builder as tgb
 import plotly.graph_objects as go
 import plotly.offline as pyo
 
@@ -12,12 +10,7 @@ location_counts = data['location'].value_counts(sort=True)
 location_fig = go.Figure(data=go.Bar(x=location_counts.index, y=location_counts.values))
 location_fig.update_layout(title_text='Location counts', xaxis_title='index', yaxis_title='values')
 
-# md='''
-# # Analysis of sourced data
 
-# <|{location_counts}|chart|type=bar|x=index|y=values|>'''
-
-# Figures are as observed on March 18, 2024
 demand={
     "python developer": 7947,
     "data analyst": 5221,
@@ -45,14 +38,9 @@ demand.reset_index(inplace=True)
 demand.columns=['Query','Demand']
 
 
-with tgb.Page() as analysis_page:
-    tgb.text('Analysis of sourced data',class_name='h1')
-    tgb.html('br')
-    tgb.text('Demand of jobs as sourced on 18 March 2024.', class_name='h4')
-    with tgb.part('card'):
-        tgb.text('Demand of jobs sourced')
-        tgb.table('{demand}')
-    #tgb.html()
+demand_fig = go.Figure(data=go.Bar(x=demand['Query'], y=demand['Demand']))
+demand_fig.update_layout(title_text='Job Demand', xaxis_title='Job', yaxis_title='Demand')
+graph_div = pyo.plot(demand_fig, output_type='div')
 
-# todo : add the plotly charts - store as image then use html(md is hard, no docs for py)
-#Gui(analysis_page).run()
+with open('static/demand.html','w') as f:
+    f.write(graph_div)
