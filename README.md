@@ -24,6 +24,8 @@ on the terminal in the project's root directory.
 
 3. Other files present in the root dir - main.py contains code for the root page of the multi page taipy app, others are irrelevant to the normal functioning of the tool(except requirements.txt and README.md).
 
+A video demonstration of some of the features of this app is available [here](https://drive.google.com/file/d/1c0blZZL1eIHh5n8_6OFFAVL34rNM6wwm/view?usp=sharing).
+
 ## Implemented features - 
 - Scrapers for indeed and ycombinator - gets jobs using Selenium and BeautifulSoup.
 - Crawlers for getting job descriptions of the jobs scraped. 
