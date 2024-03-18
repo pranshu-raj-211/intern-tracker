@@ -42,13 +42,12 @@ def get_chunks(df, chunk_size=20):
 
 chunks = list(get_chunks(filtered_df))
 
-
 def filter_data(state):
-    print(state.selected_locations, state.selected_sources)
+    print(state.selected_locations, state.selected_sources, state.selected_queries)
     state.filtered_df = state.filtered_df[
         state.filtered_df["location"].isin([state.selected_locations])
-        & state.filtered_df["source"].isin(state.selected_sources)
-        & state.filtered_df["query"].isin(state.selected_queries)
+        & state.filtered_df["source"].isin([state.selected_sources])
+        & state.filtered_df["query"].isin([state.selected_queries])
     ]
     state.chunk_index=0
     if state.filtered_df.empty:
@@ -65,6 +64,9 @@ def navigate_to_link(state, link_url, payload=None):
 
 
 def simulate_adding_more_links(state):
+    state.selected_sources = 'indeed'
+    state.selected_queries = 'python developer'
+    state.selected_locations = 'remote'
     state.chunks = list(get_chunks(state.filtered_df))
     if state.chunk_index < len(state.chunks):
         chunk = state.chunks[state.chunk_index]
@@ -131,4 +133,4 @@ def on_init(state):
 
 
 # * do not use the following line if running the multi page app, it is only for debugging
-Gui(link_part).run(debug=True, use_reloader=True)
+# Gui(link_part).run(debug=True, use_reloader=True)
