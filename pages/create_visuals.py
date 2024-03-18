@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.offline as pyo
+import plotly.io as pio
 
 
 data = pd.read_csv('data/aggregate/aggregate.csv')
@@ -44,3 +45,6 @@ graph_div = pyo.plot(demand_fig, output_type='div')
 
 with open('static/demand.html','w') as f:
     f.write(graph_div)
+
+pio.write_image(demand_fig,'static/job_demand.png')
+pio.write_image(location_fig, 'static/location_counts.png')
