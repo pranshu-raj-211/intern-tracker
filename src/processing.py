@@ -2,7 +2,6 @@ import os
 import pandas as pd
 from datetime import datetime
 
-date = datetime.today().strftime("%Y_%m_%d")
 DIRECTORIES = ["data/raw/indeed/", "data/raw/yc"]
 required_columns = [
     "title",
@@ -15,7 +14,7 @@ required_columns = [
     "source",
 ]
 RAW = "raw"
-AGGREGATE_PATH = f"data/aggregate/aggregate.csv"
+AGGREGATE_PATH = "data/aggregate/aggregate.csv"
 CLEANED = "cleaned"
 
 dataframes = []
@@ -38,9 +37,10 @@ def get_data(path):
     return df
 
 
-def make_clickable(val):
-    return f'<a target="_blank" href="{val}">{val}</a>'
-
+def process_link(link, prefix):
+    if not str(link).startswith('https'):
+        return prefix + link
+    return link
 
 def process_data(data, source):
     data = data.drop_duplicates()
@@ -48,13 +48,13 @@ def process_data(data, source):
 
     data["source"] = source
     if source == "indeed":
-        data["link"] = data["link"].apply(lambda x: "https://in.indeed.com" + str(x))
+        data["link"] = data["link"].apply(lambda x :process_link(x, 'https://in.indeed.com'))
     elif source == "yc":
         data["link"] = data["link"].apply(
-            lambda x: "https://www.ycombinator.com/jobs/role" + str(x)
+            lambda x: process_link(x, 'https://ycombinator.com')
         )
-    # add source hostname to link
 
+    # check for required columns
     columns = set(data.columns)
     if columns != set(required_columns):
         absent_columns = set(required_columns) - columns
@@ -64,10 +64,9 @@ def process_data(data, source):
     if "duration" in columns:
         data = data.drop(columns=["duration"])
 
-    # set column order to a standard order
+    # re order columns - same format for aggregation
     data = data[required_columns]
-
-    # Substitute 'Not Specified' where salary is NaN
+    # really necessary, but try alternative options
     data["salary"] = data["salary"].fillna("Not Specified")
 
     return data
@@ -85,12 +84,16 @@ def main():
             data = process_data(data, source)
             path = str(path).replace(RAW, CLEANED)
             dataframes.append(data)
+    # TODO : add a last date run check to prevent duplication of records
     if dataframes:
         aggregated_data = pd.concat(dataframes, ignore_index=True)
         if os.path.exists(AGGREGATE_PATH):
             previous_aggregate = pd.read_csv(AGGREGATE_PATH)
-            aggregated_data = pd.concat([aggregated_data, previous_aggregate])
+            aggregated_data = pd.concat(
+                [aggregated_data, previous_aggregate], ignore_index=True
+            )
         print(len(aggregated_data))
+        aggregated_data = aggregated_data.reindex(index=aggregated_data.index[::-1])
         aggregated_data.to_csv(AGGREGATE_PATH, index=False)
     else:
         print("No dataframes to aggregate")
