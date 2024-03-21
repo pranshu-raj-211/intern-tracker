@@ -7,7 +7,6 @@ from pages.analysis import analysis_page
 
 with tgb.Page() as root_page:
     tgb.navbar()
-    #tgb.text('Home page', class_name='h1')
 
 pages = {"/": root_page,
          'home':home_page,
@@ -15,9 +14,7 @@ pages = {"/": root_page,
          "analysis":analysis_page}
 
 def on_init(state):
-    state.selected_sources = 'indeed'
-    state.selected_queries = 'python developer'
-    state.selected_locations = 'remote'
+    jobs.init_selector_vars(state)
     jobs.simulate_adding_more_links(state)
     jobs.filter_data(state)
 
