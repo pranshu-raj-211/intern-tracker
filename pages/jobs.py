@@ -34,6 +34,11 @@ links = {}
 chunk_index = 0
 
 
+def init_selector_vars(state):
+    state.selected_sources = 'indeed'
+    state.selected_queries = 'python developer'
+    state.selected_locations = 'remote'
+
 def get_chunks(df, chunk_size=20):
     n_chunks = len(df) // chunk_size + 1
     for i in range(n_chunks):
@@ -142,9 +147,7 @@ with tgb.Page() as link_part:
 
 
 def on_init(state):
-    state.selected_sources = 'indeed'
-    state.selected_queries = 'python developer'
-    state.selected_locations = 'remote'
+    init_selector_vars(state)
     simulate_adding_more_links(state)
 
 

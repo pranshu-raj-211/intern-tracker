@@ -15,6 +15,9 @@ pages = {"/": root_page,
          "analysis":analysis_page}
 
 def on_init(state):
+    state.selected_sources = 'indeed'
+    state.selected_queries = 'python developer'
+    state.selected_locations = 'remote'
     jobs.simulate_adding_more_links(state)
     jobs.filter_data(state)
 
