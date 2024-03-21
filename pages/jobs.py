@@ -44,10 +44,10 @@ chunks = list(get_chunks(filtered_df))
 
 def filter_data(state):
     print(state.selected_locations, state.selected_sources, state.selected_queries)
-    state.filtered_df = state.filtered_df[
-        state.filtered_df["location"].isin([state.selected_locations])
-        & state.filtered_df["source"].isin([state.selected_sources])
-        & state.filtered_df["query"].isin([state.selected_queries])
+    state.filtered_df = df[
+        df["location"].isin([state.selected_locations])
+        & df["source"].isin([state.selected_sources])
+        & df["query"].isin([state.selected_queries])
     ]
     state.chunk_index=0
     if state.filtered_df.empty:
@@ -64,9 +64,6 @@ def navigate_to_link(state, link_url, payload=None):
 
 
 def simulate_adding_more_links(state):
-    state.selected_sources = 'indeed'
-    state.selected_queries = 'python developer'
-    state.selected_locations = 'remote'
     state.chunks = list(get_chunks(state.filtered_df))
     if state.chunk_index < len(state.chunks):
         chunk = state.chunks[state.chunk_index]
@@ -76,6 +73,38 @@ def simulate_adding_more_links(state):
             chunk.reset_index(drop=True, inplace=True)
             state.links = {"link_" + str(i): row for i, row in chunk.iterrows()}
         state.chunk_index += 1
+
+
+def is_card_rendered(links, nb_link):
+    return 'link_' + str(nb_link) in list(links)
+def get_title(links, i):
+    return links['link_' + str(i)]['title'] if is_card_rendered(links, i) else ''
+def get_company(links, i):
+    return links['link_' + str(i)]['company'] if is_card_rendered(links, i) else ''
+def get_location(links, i):
+    return links['link_' + str(i)]['location'] if is_card_rendered(links, i) else ''
+def get_link(links, i):
+    return links['link_' + str(i)]['link'] if is_card_rendered(links, i) else ''
+
+def card_link(i):
+    with tgb.part("card", render="{is_card_rendered(links, " + str(i) + ")}") as card_part:
+        tgb.text("{get_title(links, " + str(i) + ")}", class_name="h3")
+        tgb.html("br")
+        with tgb.layout("1 1"):
+            tgb.text(
+                "{get_company(links, " + str(i) + ")}", class_name="h5"
+            )
+            tgb.text(
+                "{get_location(links, " + str(i) + ")}", class_name="h5"
+            )
+        tgb.button(
+            "Apply",
+            on_action=navigate_to_link,
+            id="{get_link(links, " + str(i) + ")}",
+            class_name="plain",
+        )
+    return card_part
+
 
 
 with tgb.Page() as link_part:
@@ -108,27 +137,14 @@ with tgb.Page() as link_part:
         )
     with tgb.layout("1 1 1 1"):
         for i in range(20):
-            with tgb.part("card"):
-                tgb.text("{links['link_" + str(i) + "']['title']}", class_name="h3")
-                tgb.html("br")
-                with tgb.layout("1 1"):
-                    tgb.text(
-                        "{links['link_" + str(i) + "']['company']}", class_name="h5"
-                    )
-                    tgb.text(
-                        "{links['link_" + str(i) + "']['location']}", class_name="h5"
-                    )
-                tgb.button(
-                    "Apply",
-                    on_action=navigate_to_link,
-                    id="{links['link_" + str(i) + "']['link']}",
-                    class_name="plain",
-                )
-
+            card_link(i)
     tgb.button("See more jobs", on_action=simulate_adding_more_links)
 
 
 def on_init(state):
+    state.selected_sources = 'indeed'
+    state.selected_queries = 'python developer'
+    state.selected_locations = 'remote'
     simulate_adding_more_links(state)
 
 
