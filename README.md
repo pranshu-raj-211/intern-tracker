@@ -3,7 +3,6 @@
 
 This project sources jobs from various job boards to recommend jobs to users based on their preferences. This project arose from the need to automate job searches and filter out irrelevant jobs during my internship search and scores jobs to find the most relevant jobs according to many criteria.
 
-
 ## How to run
 
 Clone the repository and change directory into the project directory.
@@ -36,3 +35,4 @@ A video demonstration of some of the features of this app is available [here](ht
 - Improve the description processing pipeline, connect all the scripts using Airflow pipelines.
 - Implement better scoring methods such as the BM25 model, along with some query generation mechanism.
 - Gather user feedback on each job card (through upvote and downvote buttons) to affect the job's ranking - this way incorrect rankings may get corrected, also paves the way for model weights to stay relevant with drift.
+- Try out a simple vector search based ranking.
