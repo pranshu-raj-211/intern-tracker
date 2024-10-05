@@ -1,0 +1,8 @@
+num_pages: 5
+base_url: "https://www.indeed.com/jobs?q=data+scientist&l=New+York%2C+NY"
+data_dir: "data/raw/indeed"
+job_titles:
+  - "data scientist intern"
+  - "machine learning intern"
+  - "python developer intern"
+  - "software engineer intern"
