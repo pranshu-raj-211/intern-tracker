@@ -10,18 +10,19 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 
+# TODO: create loggers to do streamhandling and file handling
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%d_%m_%y %H:%M:%S",
 )
-# this works well
-driver = webdriver.Firefox()
 
 
+# ! there is a stray webdriver in here somewhere, find and remove to save resources and prevent tracing
+# todo: refactor this whole file to be a lot more easier to understand
 def init_driver():
     """Initiates a webdriver for firefox in headless mode."""
     options = Options()
@@ -29,7 +30,7 @@ def init_driver():
     return webdriver.Firefox(options=options)
 
 
-def load_config(config_path="indeed_config.yaml"):
+def load_config(config_path="src\scrapers\indeed_config.yaml"):
     """Load config params, including job titles and number of pages."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -39,6 +40,8 @@ config = load_config()
 
 
 def get_jobs(soup):
+    """
+    Parses a soup object to get job data and return it as a list of dicts."""
     containers = soup.findAll("div", class_="job_seen_beacon")
 
     jobs = []
@@ -71,50 +74,68 @@ def get_jobs(soup):
     return jobs
 
 
-def main():
+def save_scraped_jobs(jobs_df, title):
+    """Saves scraped jobs to a database, currently using csv file for this purpose."""
+    data_dir = config["data_dir"]
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
     current_date = datetime.datetime.now().strftime("%Y_%m_%d")
+    jobs_df.to_csv(f"{data_dir}/{current_date}.csv", index=False)
+    logging.info(f"Saved jobs to {data_dir}/{current_date}.csv")
+
+
+def scrape_jobs(driver, title):
+    """Iterate over pages for each job title and collect data."""
+    all_jobs = []
+    base_url = config["base_url"].format(quote_plus(title))
+    logging.info(f"Starting process - scrape {title} from indeed")
+    time.sleep(20 + random.random() * 5)
+
+    for i in range(config["num_pages"]):
+        try:
+            driver.get(base_url + "&start=" + str(i * 10))
+        except TimeoutException:
+            logging.exception(f"Timeout while loading url")
+            continue
+        except WebDriverException as e:
+            logging.exception(f"WebDriverException: {e}")
+            break
+
+        driver.implicitly_wait(15)
+        time.sleep(30 * random.random())
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
+        found_jobs = get_jobs(soup)
+        all_jobs.extend(found_jobs)
+    return all_jobs
+
+
+def main():
     start_time = time.time()
     jobs_df = pd.DataFrame()
+    driver = init_driver()
 
-    for title in config["job_titles"]:
-        all_jobs = []
+    try:
+        for title in config["job_titles"]:
+            all_jobs = scrape_jobs(driver, title)
+            if all_jobs:
+                df = pd.DataFrame(all_jobs)
+                df["query"] = title
+                df["source"] = "indeed"
+                jobs_df = pd.concat([jobs_df, df], ignore_index=True)
+                logging.info(f"Done with {title}, scraped {len(all_jobs)} jobs")
+            else:
+                logging.warning(f"No jobs found for {title}")
 
-        logging.info(f"Starting process - scrape {title} from indeed")
-        time.sleep(20 + random.random() * 5)
+        save_scraped_jobs(jobs_df, title)
+    except Exception as e:
+        logging.exception(f"An error occurred: {e}")
+    finally:
+        driver.quit()
 
-        for i in range(config["num_pages"]):
-            try:
-                driver.get(config["base_url"] + "&start=" + str(i * 10))
-            except TimeoutException:
-                logging.exception(f"Timeout while loading url")
-            # implicit wait - stops when page loads or time is over
-            driver.implicitly_wait(15)
-            time.sleep(15 * random.random())
-            html = driver.page_source
-
-            soup = BeautifulSoup(html, "html.parser")
-
-            found_jobs = get_jobs(soup)
-            all_jobs.extend(found_jobs)
-
-        # Create directory if it doesn't exist
-        directory = os.path.join(os.getcwd(), f"data/raw/indeed")
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            print(os.path.exists(directory))
-        logging.info(f"saving to {directory}")
-
-        # Write to CSV
-        fieldnames = all_jobs[0].keys()
-        df = pd.DataFrame(all_jobs)
-        df["query"] = title
-        df["source"] = "indeed"
-        jobs_df = pd.concat([jobs_df, df], ignore_index=True)
-        jobs_df.to_csv(f"{directory}/{current_date}.csv", index=False)
-
-        logging.info(f"Done with {title}, scraped {len(all_jobs)} jobs")
-
-    driver.quit()
     end_time = time.time()
+    logging.info(f"Done in {end_time - start_time} seconds")
 
-    logging.info(f"Done in {end_time-start_time} seconds")
+
+if __name__ == "__main__":
+    main()
